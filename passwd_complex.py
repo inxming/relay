@@ -59,10 +59,10 @@ def recent_passwd(user,old_pwd,new_pwd,new_pwd2):
         else:
             old_pwd = hashlib.md5(old_pwd).hexdigest()
             history.append(old_pwd)
+        new_pwd = hashlib.md5(new_pwd).hexdigest()
         if new_pwd in list(history):
             print "\033[1;31m错误:\033[0m 密码不能和密码历史(最近3次)重复,请您重新修改!"
             return False
-        new_pwd = hashlib.md5(new_pwd).hexdigest()
         history.append(new_pwd)
         pickle.dump(history,open(history_log,'w'))
         return True
