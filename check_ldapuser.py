@@ -82,7 +82,7 @@ class LDAPTool():
             else:
                 return False
         except Exception, e:
-            print "\033[1;31m错误:\033[0m 旧密码验证失败,请确认!\n\033[1;32m提示: \033[0m忘记密码可以登录网址重置密码: http://relay.guazi-corp.com/chpasswd"
+            print "\033[1;31m错误:\033[0m 旧密码验证失败,请确认!\n\033[1;32m提示: \033[0m忘记密码可以登录网址重置密码: http://chpasswd"
 
     # 修改用户密码
     def ldap_update_pass(self, uid=None, oldpass=None, newpass=None):
@@ -107,4 +107,4 @@ class LDAPTool():
                print "无法连接LDAP服务器"
         except Exception,e:
             #print e
-            print "\033[1;31m错误:\033[0m LDAP服务连接异常,请联系SA! 邮件组: js.ts.sa@guazi.com\n"
+            print "\033[1;31m错误:\033[0m LDAP服务连接异常,请联系SA! 邮件组: xiangming.yin@gmail.com\n"
