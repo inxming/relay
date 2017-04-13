@@ -3,8 +3,11 @@
 
 import sys,os,textwrap,datetime,ConfigParser,getpass,re,socket
 from sshlogin import sshlogin
+import requests
 from check_ldapuser import LDAPTool
 from passwd_complex import recent_passwd
+from dns import resolver,reversename
+
 
 install_path='/var/relay/'
 login_user = getpass.getuser()
@@ -64,15 +67,15 @@ class nav(object):
         ssh.ssh_connect()
 
     def print_nav(self):
-        msg="""\n\033[5;36m                          Welcome to Guazi relay server \033[0m\n
-        ----------------------------------------------------------------
-        \033[1;34mDATE: %s                    USER: %s\033[0m
-        ----------------------------------------------------------------
-        0) 输入 \033[32mHost\033[0m 直接登录 或 输入\033[32m部分主机名\033[0m 进行搜索登录(如果唯一).
-        1) 输入 \033[32mP/p\033[0m 显示您有权限的主机.
-        2) 输入 \033[32mC/c\033[0m 更改密码(%s天后过期).
-        3) 输入 \033[32mH/h\033[0m 显示帮助信息.
-        4) 输入 \033[32mQ/q\033[0m 退出.
+        msg="""\n\033[5;36m                  Welcome to Guazi relay server \033[0m\n
+----------------------------------------------------------------
+\033[1;34mDATE: %s                     USER: %s\033[0m
+----------------------------------------------------------------
+0) 输入 \033[32mHost\033[0m 直接登录 或 输入\033[32m部分主机名\033[0m 进行搜索登录(如果唯一).
+1) 输入 \033[32mP/p\033[0m 显示您有权限的主机.
+2) 输入 \033[32mC/c\033[0m 更改密码(%s天后过期).
+3) 输入 \033[32mH/h\033[0m 显示帮助信息.
+4) 输入 \033[32mQ/q\033[0m 退出.
         """%(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),login_user,self.expire_passwd())
         print textwrap.dedent(msg)
 
@@ -106,20 +109,30 @@ class nav(object):
         return False
 
     def isHostname(self,ip):
-        hn=""
         try:
-            result = socket.gethostbyaddr(ip)
-            hn=result[0]
+            addr = reversename.from_address(ip)
+            ptr_name = resolver.query(addr,'PTR')
+            hn = socket.gethostbyaddr(ip)[0]
         except Exception,e:
             os.system('clear')
             nav.print_nav()
-            print self.print_dict('valid_addr')
+            print self.print_dict('invalid_addr')
             return
         config = ConfigParser.ConfigParser()
         config.readfp(open(install_path + 'conf/access.ini'))
         hosts = config.options(login_user)
-        if hn.split('.dns') in hosts:
-            self.connect_hostname=hn
+        if len(ptr_name) >=2:
+            HostName_list = []
+            reversename_list = [ i for i in ptr_name ]
+            for i in range(len(reversename_list)):
+                HostName = re.split(' ',str(reversename_list[i]))[0].split('.dns')[0]
+                HostName_list.append(HostName)
+            intersection = list((set(HostName_list).union(set(hosts)))^(set(HostName_list)^set(hosts)))
+            self.connect_hostname=intersection[0]
+            self.try_connect()
+        if hn.split('.dns')[0] in hosts:
+            print hosts
+            self.connect_hostname=hn.split('.dns')[0]
             self.try_connect()
         elif hn == "localhost":
             os.system('clear')
@@ -128,6 +141,8 @@ class nav(object):
         else:
             os.system('clear')
             nav.print_nav()
+            print result
+            print hn.split('.dns')[0]
             print self.print_dict('per_denied') % (ip)
 
 
@@ -166,7 +181,6 @@ class nav(object):
             if opt in ["n","N","no","No"]:
                 return
             elif opt in ["y","Y","Yes","yes"]:
-                #os.system('clear')
                 self.print_rules()
                 self.verify_passwd()
                 return
@@ -197,9 +211,9 @@ class nav(object):
             'old_faild': '\033[1;31m错误:\033[0m 旧密码验证失败,请确认!\n',
             'invalid_opt': '\033[1;31m错误:\033[0m 无效的选择,请重新输入!\n',
             'not_found':'\033[1;31m错误:\033[0m 没有查找到相关的主机记录,请重新输入!\n',
-            'res_fail':'\033[1;31m错误: %s 地址解析异常,请重新输入!\033[0m\n',
-            'invalid_addr':'\033[1;31m错误: 无效的地址,请核实!\033[0m\n',
-            'per_denied':'\033[1;31m错误:您没有权限访问 %s,请重新输入!\033[0m\n',
+            'res_fail':'\033[1;31m错误:\033[0m %s 地址解析异常,请重新输入!\n',
+            'invalid_addr':'\033[1;31m错误:\033[0m 无效的地址,请核实!\n',
+            'per_denied':'\033[1;31m错误:\033[0m 您没有权限访问 %s,请重新输入!\n',
             'day':'\033[1;31m%d\033[0m',
             'set_pw':'\033[1;31m提示:\033[0m relay账户密码过期,请重新设置密码! 否则将无法使用!\n',
             'parser_fail':'\033[1;31m错误:\033[0m 配置文件解析异常,请确认您是否有主机权限!\n',
@@ -211,8 +225,8 @@ class nav(object):
         rules = "\033[1;31m重置密码原则:\033[0m\n\
   1) 密码的长度需大于等于8位.\n\
   2) 密码可使用90天,过期需要更改密码.\n\
-  3) 密码需符合复杂性要求至少包含(大写、小写、数字、符号)三种类型以上.\n\
-  4) 密码不得和密码历史(最近3次)重复.\n"
+  3) 密码不得和密码历史(最近3次)重复.\n\
+  4) 密码需符合复杂性要求至少包含(大写、小写、数字、符号)三种类型以上.\n"
         print rules
 
 
@@ -256,6 +270,7 @@ def main():
 
 if __name__== '__main__':
     nav=nav()
+    os.system('clear')
     nav.print_nav()
     while True:
         try:
