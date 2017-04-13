@@ -131,8 +131,9 @@ class nav(object):
             self.connect_hostname=intersection[0]
             self.try_connect()
         else:
-            if hn.split('.dns')[0] in hosts:
-                self.connect_hostname=hn.split('.dns')[0]
+            HostName = re.split(' ',str(ptr_name[0]))[0].split('.dns')[0]
+            if HostName in hosts:
+                self.connect_hostname=HostName
                 self.try_connect()
             elif hn == "localhost":
                 os.system('clear')
