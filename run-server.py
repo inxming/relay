@@ -130,20 +130,20 @@ class nav(object):
             intersection = list((set(HostName_list).union(set(hosts)))^(set(HostName_list)^set(hosts)))
             self.connect_hostname=intersection[0]
             self.try_connect()
-        if hn.split('.dns')[0] in hosts:
-            print hosts
-            self.connect_hostname=hn.split('.dns')[0]
-            self.try_connect()
-        elif hn == "localhost":
-            os.system('clear')
-            nav.print_nav()
-            print self.print_dict('res_fail') %(ip)
         else:
-            os.system('clear')
-            nav.print_nav()
-            print result
-            print hn.split('.dns')[0]
-            print self.print_dict('per_denied') % (ip)
+            if hn.split('.dns')[0] in hosts:
+                self.connect_hostname=hn.split('.dns')[0]
+                self.try_connect()
+            elif hn == "localhost":
+                os.system('clear')
+                nav.print_nav()
+                print self.print_dict('res_fail') %(ip)
+            else:
+                os.system('clear')
+                nav.print_nav()
+                print result
+                print hn.split('.dns')[0]
+                print self.print_dict('per_denied') % (ip)
 
 
     def search(self,keyword):
