@@ -9,7 +9,7 @@ from passwd_complex import recent_passwd
 from dns import resolver,reversename
 
 
-install_path='/var/relay/'
+install_path='/test/path'
 login_user = getpass.getuser()
 
 
@@ -67,7 +67,7 @@ class nav(object):
         ssh.ssh_connect()
 
     def print_nav(self):
-        msg="""\n\033[5;36m                  Welcome to Guazi relay server \033[0m\n
+        msg="""\n\033[5;36m                  Welcome to relay server \033[0m\n
 ----------------------------------------------------------------
 \033[1;34mDATE: %s                     USER: %s\033[0m
 ----------------------------------------------------------------
@@ -112,7 +112,6 @@ class nav(object):
         try:
             addr = reversename.from_address(ip)
             ptr_name = resolver.query(addr,'PTR')
-            hn = socket.gethostbyaddr(ip)[0]
         except Exception,e:
             os.system('clear')
             nav.print_nav()
@@ -135,15 +134,13 @@ class nav(object):
             if HostName in hosts:
                 self.connect_hostname=HostName
                 self.try_connect()
-            elif hn == "localhost":
+            elif HostName == "localhost":
                 os.system('clear')
                 nav.print_nav()
                 print self.print_dict('res_fail') %(ip)
             else:
                 os.system('clear')
                 nav.print_nav()
-                print result
-                print hn.split('.dns')[0]
                 print self.print_dict('per_denied') % (ip)
 
 
